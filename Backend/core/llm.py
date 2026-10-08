@@ -1,10 +1,11 @@
 """LLM provider layer.
 
-Two implementations behind one protocol:
+Three implementations behind one protocol:
 
-1. OpenAICompatibleProvider — talks to any OpenAI-compatible chat completions
+1. GeminiProvider — uses Google's Gemini API via the official SDK.
+2. OpenAICompatibleProvider — talks to any OpenAI-compatible chat completions
    endpoint (OpenAI, OpenRouter, local vLLM/Ollama, ...) using httpx.
-2. RuleBasedProvider — deterministic fallback used when no API key is set or
+3. RuleBasedProvider — deterministic fallback used when no API key is set or
    the remote provider fails, so the demo never breaks.
 
 The agent layer only depends on the protocol.
@@ -33,6 +34,66 @@ class BaseProvider:
 
     def chat(self, system: str, user: str, json_mode: bool = False) -> LLMResult:
         raise NotImplementedError
+
+
+class GeminiProvider(BaseProvider):
+    """Google Gemini API provider using the official google-generativeai SDK."""
+    
+    name = "gemini"
+
+    def __init__(self, api_key: str, model: str, timeout: float):
+        self.api_key = api_key
+        self.model = model
+        self.timeout = timeout
+        self._client = None
+
+    def _get_client(self):
+        """Lazy-load the Gemini client."""
+        if self._client is None:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=self.api_key)
+                self._client = genai
+            except ImportError:
+                raise LLMError(
+                    "google-generativeai is not installed. "
+                    "Install it with: pip install google-generativeai"
+                )
+        return self._client
+
+    def chat(self, system: str, user: str, json_mode: bool = False) -> LLMResult:
+        try:
+            genai = self._get_client()
+            
+            # Combine system and user messages
+            # Gemini doesn't have a separate system role in all models,
+            # so we prepend system as part of the prompt
+            combined_prompt = f"{system}\n\n{user}"
+            
+            model = genai.GenerativeModel(self.model)
+            
+            generation_config = {
+                "temperature": 0.3,
+            }
+            
+            if json_mode:
+                generation_config["response_mime_type"] = "application/json"
+            
+            response = model.generate_content(
+                combined_prompt,
+                generation_config=generation_config,
+                request_options={"timeout": self.timeout},
+            )
+            
+            if not response.text:
+                raise LLMError("Gemini returned empty response")
+            
+            return LLMResult(text=response.text, provider=self.name, model=self.model)
+            
+        except Exception as exc:
+            if isinstance(exc, LLMError):
+                raise
+            raise LLMError(f"Gemini API error: {str(exc)}") from exc
 
 
 class OpenAICompatibleProvider(BaseProvider):
@@ -178,11 +239,11 @@ class RuleBasedProvider(BaseProvider):
         # target role
         if "کارآموز" in text or "intern" in lowered:
             patch["level"] = "intern"
-            patch["target_role"] = patch.get("target_role") or "فرانت\u200cاند"
+            patch["target_role"] = patch.get("target_role") or "فرانت‌اند"
         elif "جونیور" in text or "junior" in lowered:
             patch["level"] = "junior"
         if "فرانت" in text or "frontend" in lowered or "react" in lowered:
-            patch["target_role"] = patch.get("target_role") or "فرانت\u200cاند"
+            patch["target_role"] = patch.get("target_role") or "فرانت‌اند"
         elif "بک" in text and "اند" in text:
             patch["target_role"] = "بک‌اند"
 
@@ -235,7 +296,19 @@ class RuleBasedProvider(BaseProvider):
 
 
 def get_provider() -> BaseProvider:
-    """Factory used across the app."""
+    """Factory used across the app.
+    
+    Priority:
+    1. GEMINI_API_KEY → GeminiProvider
+    2. OPENAI_API_KEY → OpenAICompatibleProvider
+    3. None → RuleBasedProvider (fallback)
+    """
+    if settings.GEMINI_API_KEY:
+        return GeminiProvider(
+            api_key=settings.GEMINI_API_KEY,
+            model=settings.GEMINI_MODEL,
+            timeout=settings.GEMINI_TIMEOUT,
+        )
     if settings.OPENAI_API_KEY:
         return OpenAICompatibleProvider(
             api_key=settings.OPENAI_API_KEY,
