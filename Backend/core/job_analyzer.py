@@ -188,22 +188,24 @@ def _verify_evidence(job: AnalyzedJob, jd: str) -> AnalyzedJob:
 
     # Verify experience requirements
     exp = job.experience_requirements
-    if exp.source_text and not _in_text(exp.source_text, jd_norm):
-        exp.source_text = None
-    if (exp.min_years is not None or exp.max_years is not None) and not exp.source_text:
-        exp.min_years = None
-        exp.max_years = None
-        warnings.append("Experience requirement could not be verified in job description text; removed.")
+    if exp:
+        if exp.source_text and not _in_text(exp.source_text, jd_norm):
+            exp.source_text = None
+        if (exp.min_years is not None or exp.max_years is not None) and not exp.source_text:
+            exp.min_years = None
+            exp.max_years = None
+            warnings.append("Experience requirement could not be verified in job description text; removed.")
 
     # Verify salary
     sal = job.salary
-    if sal.source_text and not _in_text(sal.source_text, jd_norm):
-        sal.source_text = None
-    if (sal.min is not None or sal.max is not None) and not sal.source_text:
-        sal.min = None
-        sal.max = None
-        sal.currency = None
-        warnings.append("Salary information could not be verified in job description text; removed.")
+    if sal:
+        if sal.source_text and not _in_text(sal.source_text, jd_norm):
+            sal.source_text = None
+        if (sal.min is not None or sal.max is not None) and not sal.source_text:
+            sal.min = None
+            sal.max = None
+            sal.currency = None
+            warnings.append("Salary information could not be verified in job description text; removed.")
 
     # Verify technologies, tools, certifications
     job.technologies = [t for t in job.technologies if _in_text(t, jd_norm)]

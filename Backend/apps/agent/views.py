@@ -83,3 +83,20 @@ def agent_feedback(request):
             user=request.user, role="user", content="[بازخورد] " + text
         )
     return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def analyze_job(request):
+    """POST /api/chat/analyze-job/ {description} → {job_analysis: {...}}."""
+    description = str((request.data or {}).get("description") or "").strip()
+    if not description:
+        return Response({"error": {"code": "empty_input", "message": "متن آگهی شغلی نمی‌تواند خالی باشد."}}, status=400)
+    try:
+        from core.job_analyzer import analyze_job_description, JobAnalyzerError
+        analyzed = analyze_job_description(description)
+        return Response({"job_analysis": analyzed.model_dump(mode="json")})
+    except JobAnalyzerError as exc:
+        return Response({"error": {"code": exc.code, "message": exc.message}}, status=exc.http_status)
+    except Exception as exc:
+        return Response({"error": {"code": "internal_error", "message": str(exc)}}, status=500)

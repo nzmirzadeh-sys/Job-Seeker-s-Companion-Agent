@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login, register, getToken, api } from "@/lib/api";
 import { Compass, Bot, Sparkles, FileText, SearchCheck } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -15,34 +16,43 @@ export default function LandingPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError("");
     try {
-      let completed = false;
-      if (mode === "login") {
-        const data = await login(username, password);
-        completed = data.profile_completed;
-      } else {
+      if (mode === "register") {
         await register(username, password);
-        await login(username, password);
-        completed = false;
+        toast.success("حساب کاربری با موفقیت ساخته شد! اکنون با همین اطلاعات وارد شوید.");
+        setMode("login");
+        setPassword("");
+        return;
       }
-      if (completed) {
-        router.push("/jobs");
-      } else {
-        // still confirm active profile state from server
+
+      // login mode
+      const data = await login(username, password);
+      let completed = data.profile_completed;
+
+      if (!completed) {
         try {
           const profile = await api<{ completed: boolean }>("/accounts/profile/");
           completed = profile.completed;
         } catch {}
-        router.push(completed ? "/jobs" : "/onboarding");
       }
+
+      toast.success("خوش آمدید!");
+      router.push(completed ? "/jobs" : "/onboarding");
     } catch (err) {
-      setError(String(err instanceof Error ? err.message : err));
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("unauthorized") || msg.includes("401")) {
+        toast.error("نام کاربری یا رمز عبور اشتباه است.");
+      } else if (msg.includes("username") && msg.includes("exist")) {
+        toast.error("این نام کاربری قبلاً ثبت شده است.");
+      } else if (msg.includes("password")) {
+        toast.error("رمز عبور باید حداقل ۸ کاراکتر باشد.");
+      } else {
+        toast.error("خطا در ارتباط با سرور. دوباره تلاش کنید.");
+      }
     } finally {
       setLoading(false);
     }
@@ -84,6 +94,12 @@ export default function LandingPage() {
                 </span>
               </li>
               <li className="flex gap-2 items-start">
+                <Sparkles className="mt-1 size-5 text-indigo-500 shrink-0" />
+                <span>
+                  <b className="text-foreground">تحلیل و راستی‌آزمایی شواهد آگهی</b>: استخراج ساختاریافته مهارت‌های الزامی، امتیازی و پشته فنی با استناد مستقیم به متن آگهی.
+                </span>
+              </li>
+              <li className="flex gap-2 items-start">
                 <Bot className="mt-1 size-5 text-indigo-500 shrink-0" />
                 <span>
                   با بازخورد شما، جست‌وجو و رزومه{" "}
@@ -91,6 +107,17 @@ export default function LandingPage() {
                 </span>
               </li>
             </ul>
+
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push("/analyzer")}
+                className="w-full sm:w-auto border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 shadow-xs"
+              >
+                <Sparkles className="size-4 ml-2 text-indigo-500" />
+                آزمایش ایجنت: تحلیل هوشمند یک آگهی شغلی
+              </Button>
+            </div>
           </div>
 
           {/* Auth card */}
@@ -145,6 +172,7 @@ export default function LandingPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                    minLength={3}
                   />
                 </div>
                 <div className="space-y-2">
@@ -157,13 +185,12 @@ export default function LandingPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    minLength={mode === "register" ? 8 : 1}
                   />
+                  {mode === "register" && (
+                    <p className="text-xs text-muted-foreground">حداقل ۸ کاراکتر</p>
+                  )}
                 </div>
-                {error ? (
-                  <p className="text-sm text-destructive" dir="auto">
-                    {error}
-                  </p>
-                ) : null}
                 <Button className="w-full" disabled={loading}>
                   {loading
                     ? "لطفاً صبر کنید…"

@@ -98,6 +98,10 @@ def run_action(user, action: str, args: dict) -> dict:
             return tools.tool_edit_resume(
                 user, int(args.get("resume_id") or 0), args.get("content") or {}
             )
+        # if action == "translate_resume":
+        #     return tools.tool_translate_resume(user, int(args.get("resume_id") or 0))
+        if action == "analyze_job":
+            return tools.tool_analyze_job(user, str(args.get("description") or ""))
         if action == "none":
             return {}
         return {"error": "unknown action: " + str(action)}
@@ -137,18 +141,19 @@ def agent_turn(user, message: str, task_hint: str = "chat"):
       {"type": "profile_updated"} / {"type": "resume_updated"}
       {"type": "error", "text": ...}
     """
-    provider = get_provider()
-    user_payload = build_user_payload(user, message, task_hint)
     reply_text = ""
-    try:
-        llm_result = provider.chat(SYSTEM_PROMPT, user_payload, json_mode=True)
-        action, args, reply_text = parse_action(llm_result.text)
-    except LLMError as exc:
-        # provider failed → rule-based fallback already handled by factory;
-        # but if even that raised, degrade gracefully
-        action, args, reply_text = "none", {}, (
-            "الان نمی‌توانم به مدل زبانی وصل شوم، اما می‌توانم آگهی‌ها را با موتور قاعده‌محور غربال کنم."
-        )
+    if task_hint == "analyze_job":
+        action, args = "analyze_job", {"description": message}
+    else:
+        provider = get_provider()
+        user_payload = build_user_payload(user, message, task_hint)
+        try:
+            llm_result = provider.chat(SYSTEM_PROMPT, user_payload, json_mode=True)
+            action, args, reply_text = parse_action(llm_result.text)
+        except LLMError as exc:
+            action, args, reply_text = "none", {}, (
+                "الان نمی‌توانم به مدل زبانی وصل شوم، اما می‌توانم آگهی‌ها را با موتور قاعده‌محور غربال کنم."
+            )
 
     yield {"type": "status", "text": "در حال تحلیل…"}
 
@@ -168,6 +173,15 @@ def agent_turn(user, message: str, task_hint: str = "chat"):
             reply_text = "پروفایلت را به‌روزرسانی کردم ✓"
         elif action in ("create_resume", "edit_resume"):
             reply_text = "رزومه‌ات آماده شد ✓ می‌توانی پیش‌نمایش و PDF بگیری."
+        # elif action == "translate_resume":
+        #     reply_text = "رزومه به زبان انگلیسی استاندارد ترجمه و آماده شد ✓ نسخهٔ انگلیسی فعال است."
+        elif action == "analyze_job":
+            if tool_result.get("error"):
+                reply_text = "تحلیل آگهی با خطا مواجه شد."
+            else:
+                job = (tool_result.get("job_analysis") or {})
+                req_cnt = len(job.get("required_skills", []))
+                reply_text = f"آگهی تحلیل شد: {req_cnt} مهارت الزامی استخراج و راستی‌آزمایی شد."
         else:
             reply_text = "انجام شد."
 

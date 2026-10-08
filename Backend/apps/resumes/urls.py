@@ -6,4 +6,5 @@ urlpatterns = [
     path("", views.resumes_collection, name="resumes"),
     path("<int:resume_id>/", views.resume_detail, name="resume_detail"),
     path("<int:resume_id>/pdf/", views.resume_pdf, name="resume_pdf"),
+    # path("<int:resume_id>/translate/", views.resume_translate, name="resume_translate"),
 ]

@@ -26,6 +26,10 @@ class SkillRequirement(BaseModel):
         }
 
 
+# Alias for backward compatibility
+SkillItem = SkillRequirement
+
+
 class ExperienceRequirement(BaseModel):
     """Represents experience requirements."""
     min_years: Optional[int] = Field(None, description="Minimum years of experience")
@@ -95,6 +99,7 @@ class AnalyzedJob(BaseModel):
     required_skills: List[SkillRequirement] = Field(default_factory=list, description="Required skills")
     preferred_skills: List[SkillRequirement] = Field(default_factory=list, description="Preferred/optional skills")
     technologies: List[str] = Field(default_factory=list, description="Specific technologies mentioned")
+    tools: List[str] = Field(default_factory=list, description="Specific tools mentioned")
 
     experience_requirements: Optional[ExperienceRequirement] = Field(
         default=None,
@@ -142,6 +147,7 @@ class AnalyzedJob(BaseModel):
                     }
                 ],
                 "technologies": ["Python", "PostgreSQL", "Docker"],
+                "tools": ["Git", "Jira"],
                 "experience_requirements": {
                     "min_years": 7,
                     "max_years": None,
@@ -170,11 +176,43 @@ class AnalyzedJob(BaseModel):
             }
         }
 
+    @field_validator('required_skills', 'preferred_skills', mode='before')
+    @classmethod
+    def ensure_skills(cls, v):
+        if not v:
+            return []
+        res = []
+        for item in v:
+            if isinstance(item, str):
+                res.append({"name": item, "source_text": item, "explicit": True})
+            elif isinstance(item, dict):
+                res.append(item)
+            elif isinstance(item, SkillRequirement):
+                res.append(item)
+        return res
+
+    @field_validator('education_requirements', mode='before')
+    @classmethod
+    def ensure_education(cls, v):
+        if not v:
+            return []
+        res = []
+        for item in v:
+            if isinstance(item, str):
+                res.append({"level": None, "field": item, "source_text": item})
+            elif isinstance(item, dict):
+                res.append(item)
+            elif isinstance(item, EducationRequirement):
+                res.append(item)
+        return res
+
     @field_validator('experience_requirements', mode='before')
     @classmethod
     def ensure_experience_requirements(cls, v):
         if v is None:
             return ExperienceRequirement()
+        if isinstance(v, dict):
+            return v
         return v
 
 

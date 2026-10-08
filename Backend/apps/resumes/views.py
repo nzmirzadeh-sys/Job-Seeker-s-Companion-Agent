@@ -74,3 +74,24 @@ def resume_pdf(request, resume_id):
     response = HttpResponse(html, content_type="text/html; charset=utf-8")
     response["X-Resume-PDF-Mode"] = "html"
     return response
+
+
+# @api_view(["POST"])
+# @permission_classes([IsAuthenticated])
+# def resume_translate(request, resume_id):
+#     from apps.resumes.translation import translate_resume_to_english
+#     resume = Resume.objects.filter(user=request.user, id=resume_id).first()
+#     if resume is None:
+#         return Response({"detail": "not found"}, status=404)
+#     translated_content = translate_resume_to_english(resume.content)
+#     last = Resume.objects.filter(user=request.user).order_by("-version").first()
+#     version = (last.version + 1) if last else 1
+#     new_resume = Resume.objects.create(
+#         user=request.user,
+#         version=version,
+#         title=f"English CV (v{version})",
+#         content=translated_content,
+#         active=True,
+#     )
+#     Resume.objects.filter(user=request.user).exclude(id=new_resume.id).update(active=False)
+#     return Response(ResumeSerializer(new_resume).data, status=status.HTTP_201_CREATED)

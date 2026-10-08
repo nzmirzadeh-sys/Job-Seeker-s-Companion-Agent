@@ -34,7 +34,17 @@ def rescore_all(user):
     prof = profile_dict_for(user)
     for job in JobPosting.objects.all():
         match, _ = Match.objects.get_or_create(user=user, job=job)
-        result = score_job(prof, JobPostingSerializer(job).data)
+        job_data = {
+            "title": job.title,
+            "company": job.company,
+            "city": job.city,
+            "level": job.level,
+            "required_skills": job.required_skills,
+            "optional_skills": job.optional_skills,
+            "job_types": job.job_types,
+            "description": job.description,
+        }
+        result = score_job(prof, job_data)
         apply_result(match, result)
         count = count + 1
     return count

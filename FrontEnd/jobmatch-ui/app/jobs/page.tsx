@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { api, getToken, streamChat, type MatchRow } from "@/lib/api";
+import { toast } from "sonner";
 import {
   Bot,
   Building2,
@@ -44,7 +45,6 @@ export default function JobsPage() {
   const [rows, setRows] = useState<MatchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
-  const [note, setNote] = useState("");
   const [selected, setSelected] = useState<MatchRow | null>(null);
   const [feedbackFor, setFeedbackFor] = useState<MatchRow | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
@@ -70,6 +70,7 @@ export default function JobsPage() {
       );
       setRows(data.results);
     } catch {
+      toast.error("خطا در بارگذاری آگهی‌ها. لطفاً دوباره وارد شوید.");
       router.replace("/");
     } finally {
       setLoading(false);
@@ -100,14 +101,15 @@ export default function JobsPage() {
 
   async function scrape() {
     setScraping(true);
-    setNote("");
     try {
       const data = await api<{ note: string; created_count: number }>(
         "/jobs/scrape/",
         { method: "POST" },
       );
-      setNote(data.note + " — " + data.created_count + " آگهی جدید");
+      toast.success(`جست‌وجو کامل شد — ${data.created_count} آگهی جدید یافت شد.`);
       loadFeed();
+    } catch {
+      toast.error("خطا در جست‌وجوی منابع. دوباره تلاش کنید.");
     } finally {
       setScraping(false);
     }
@@ -129,10 +131,7 @@ export default function JobsPage() {
         }
       });
     } catch {
-      setMessages((m) => [
-        ...m,
-        { role: "assistant", content: "خطا در ارتباط با ایجنت." },
-      ]);
+      toast.error("خطا در ارتباط با ایجنت. دوباره تلاش کنید.");
     } finally {
       setChatBusy(false);
     }
@@ -155,7 +154,16 @@ export default function JobsPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={(e) => router.push("/resume")}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/analyzer")}
+              className="text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800"
+            >
+              <Sparkles className="size-4 ml-1 text-indigo-500" />
+              تحلیل هوشمند آگهی
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push("/resume")}>
               <FileText className="size-4" />
               استودیوی رزومه
             </Button>
@@ -173,15 +181,9 @@ export default function JobsPage() {
         </div>
 
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          {note ? (
-            <Badge variant="success" className="max-w-md truncate">
-              {note}
-            </Badge>
-          ) : (
-            <span className="text-sm text-muted-foreground">
-              {loading ? "در حال محاسبه…" : rows.length + " آگهی فعال"}
-            </span>
-          )}
+          <span className="text-sm text-muted-foreground">
+            {loading ? "در حال محاسبه…" : rows.length + " آگهی فعال"}
+          </span>
           <Button size="sm" variant="secondary" onClick={scrape} disabled={scraping}>
             <Search className="size-4" />
             {scraping ? "در حال جست‌وجوی منابع…" : "جست‌وجوی منابع جدید"}
@@ -298,13 +300,13 @@ export default function JobsPage() {
               </div>
               <div className="max-h-[45vh] overflow-y-auto p-3 space-y-2">
                 {messages.map((m, i) => (
-                  <div key={i} className={"flex " + (m.role === "user" ? "justify-start" : "justify-end")}>
+                  <div key={i} className={"flex " + (m.role === "user" ? "justify-end" : "justify-start")}>
                     <div
                       className={
                         "max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed " +
                         (m.role === "user"
-                          ? "bg-indigo-600 text-white rounded-br-sm"
-                          : "bg-muted rounded-bl-sm")
+                          ? "bg-indigo-600 text-white rounded-bl-sm"
+                          : "bg-muted rounded-br-sm")
                       }
                     >
                       {m.content}
@@ -414,7 +416,21 @@ export default function JobsPage() {
               </div>
             ) : null}
 
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end flex-wrap">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("jm_analyze_text", selected.job.description || selected.job.title);
+                  }
+                  router.push("/analyzer");
+                }}
+                className="text-indigo-600 dark:text-indigo-400 font-semibold"
+              >
+                <Sparkles className="size-4 ml-1 text-indigo-500" />
+                تحلیل شواهد آگهی
+              </Button>
               <Button
                 size="sm"
                 onClick={() => {

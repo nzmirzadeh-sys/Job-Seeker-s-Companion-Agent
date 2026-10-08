@@ -103,6 +103,15 @@ export interface Resume {
   active: boolean;
 }
 
+export interface ExperienceItem {
+  title: string;
+  company: string;
+  start: string;
+  end: string;
+  description?: string;
+  bullets: string[];
+}
+
 export interface ResumeContent {
   full_name?: string;
   headline?: string;
@@ -110,19 +119,21 @@ export interface ResumeContent {
   phone?: string;
   city?: string;
   summary?: string;
+  language?: string;
+  is_english?: boolean;
   skills?: { name: string }[];
-  experiences?: {
-    title: string;
-    company: string;
-    start: string;
-    end: string;
-    bullets: string[];
-  }[];
+  experiences?: ExperienceItem[];
   projects?: { name: string; description: string; technologies: string[] }[];
   educations?: { degree: string; school: string; start: string; end: string }[];
   languages?: { name: string; level: string }[];
   links?: { label: string; url: string }[];
 }
+
+// export async function translateResume(resumeId: number) {
+//   return api<Resume>(`/resumes/${resumeId}/translate/`, {
+//     method: "POST",
+//   });
+// }
 
 // ---- auth ----
 export async function register(username: string, password: string) {
@@ -184,4 +195,69 @@ export async function streamChat(
       } catch {}
     }
   }
+}
+
+// ---- Job Analyzer Types ----
+export interface SkillRequirement {
+  name: string;
+  source_text?: string | null;
+  explicit: boolean;
+}
+
+export interface ExperienceRequirement {
+  min_years?: number | null;
+  max_years?: number | null;
+  source_text?: string | null;
+}
+
+export interface EducationRequirement {
+  level?: string | null;
+  field?: string | null;
+  source_text?: string | null;
+}
+
+export interface SalaryInfo {
+  min?: number | null;
+  max?: number | null;
+  currency?: string | null;
+  source_text?: string | null;
+}
+
+export interface AnalyzedJob {
+  title?: string | null;
+  company?: string | null;
+  seniority?: string | null;
+  employment_type?: string | null;
+  location?: string | null;
+  required_skills: SkillRequirement[];
+  preferred_skills: SkillRequirement[];
+  technologies: string[];
+  tools: string[];
+  experience_requirements?: ExperienceRequirement | null;
+  education_requirements?: EducationRequirement[];
+  certifications?: string[];
+  languages?: string[];
+  responsibilities?: string[];
+  other_requirements?: string[];
+  salary?: SalaryInfo | null;
+  warnings: string[];
+  source_text?: string | null;
+  provider?: string | null;
+  model?: string | null;
+}
+
+export interface JobAnalysisResult {
+  job_analysis?: AnalyzedJob;
+  error?: {
+    code: string;
+    message: string;
+    retryable?: boolean;
+  };
+}
+
+export async function analyzeJob(description: string): Promise<JobAnalysisResult> {
+  return api<JobAnalysisResult>("/chat/analyze-job/", {
+    method: "POST",
+    body: JSON.stringify({ description }),
+  });
 }

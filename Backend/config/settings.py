@@ -112,3 +112,8 @@ OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "45"))
 
 AGGREGATOR_SCRAPER = os.environ.get("AGGREGATOR_SCRAPER", "").strip()
+
+# Gemini (Job Analyzer Agent). Backend-only: never sent to the frontend.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_TIMEOUT = float(os.environ.get("GEMINI_TIMEOUT", "45"))

@@ -30,7 +30,10 @@ def tool_update_profile(user, patch: dict) -> dict:
     profile, _ = Profile.objects.get_or_create(user=user)
     changed = []
     for key, value in (patch or {}).items():
-        if key not in PROFILE_FIELDS or value in (None, "", [], {}):
+        if key not in PROFILE_FIELDS:
+            continue
+        # Allow 0 for numeric fields like experience_years
+        if value is None or value == "" or value == [] or value == {}:
             continue
         expected = PROFILE_FIELDS[key]
         if isinstance(value, expected):
@@ -38,8 +41,8 @@ def tool_update_profile(user, patch: dict) -> dict:
             changed.append(key)
     if "skills" in changed:
         profile.skills = [str(s).strip() for s in profile.skills if str(s).strip()]
-    has_core = bool(profile.full_name or profile.headline)
-    profile.completed = has_core and bool(profile.skills)
+    # Profile is ready when we have target role and location
+    profile.completed = bool(profile.target_role) and bool(profile.city or profile.remote_only)
     profile.save()
     if changed:
         rescore_all(user)
@@ -138,6 +141,28 @@ def tool_edit_resume(user, resume_id: int, content: dict) -> dict:
     return {"resume_id": resume.id, "version": resume.version, "updated": list(content.keys())}
 
 
+# def tool_translate_resume(user, resume_id: int = 0) -> dict:
+#     from apps.resumes.translation import translate_resume_to_english
+#     if resume_id:
+#         resume = Resume.objects.filter(user=user, id=resume_id).first()
+#     else:
+#         resume = Resume.objects.filter(user=user, active=True).first() or Resume.objects.filter(user=user).first()
+#     if not resume:
+#         return {"error": "no resume found"}
+#     translated = translate_resume_to_english(resume.content)
+#     last = Resume.objects.filter(user=user).order_by("-version").first()
+#     version = (last.version + 1) if last else 1
+#     new_resume = Resume.objects.create(
+#         user=user,
+#         version=version,
+#         title=f"English CV (v{version})",
+#         content=translated,
+#         active=True,
+#     )
+#     Resume.objects.filter(user=user).exclude(id=new_resume.id).update(active=False)
+#     return {"resume_id": new_resume.id, "version": new_resume.version}
+
+
 def tool_set_active_resume(user, resume_id: int) -> dict:
     resume = Resume.objects.filter(user=user, id=resume_id).first()
     if resume is None:
@@ -146,3 +171,13 @@ def tool_set_active_resume(user, resume_id: int) -> dict:
     resume.active = True
     resume.save()
     return {"resume_id": resume.id, "active": True}
+
+
+def tool_analyze_job(user, description: str) -> dict:
+    """Invokes the Job Analyzer Agent and returns structured output."""
+    try:
+        from core.job_analyzer import analyze_job_description, JobAnalyzerError
+        analyzed = analyze_job_description(description)
+        return {"job_analysis": analyzed.model_dump(mode="json")}
+    except Exception as exc:
+        return {"error": str(exc)}

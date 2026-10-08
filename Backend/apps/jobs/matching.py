@@ -47,6 +47,27 @@ _SYNONYMS_RAW = {
     "ری اکت": "react",
     "نکست": "nextjs",
     "نکست جی اس": "nextjs",
+    "دیتا ساینس": "data science",
+    "علم داده": "data science",
+    "یادگیری ماشین": "machine learning",
+    "ماشین لرنینگ": "machine learning",
+    "ml": "machine learning",
+    "یادگیری عمیق": "deep learning",
+    "دیپ لرنینگ": "deep learning",
+    "هوش مصنوعی": "ai",
+    "اس کیوال": "sql",
+    "اس‌کیوال": "sql",
+    "پانداز": "pandas",
+    "نامپای": "numpy",
+    "پای تورچ": "pytorch",
+    "پایتورچ": "pytorch",
+    "تنسورفلو": "tensorflow",
+    "داکر": "docker",
+    "کوبرنتیز": "kubernetes",
+    "لینوکس": "linux",
+    "گیت": "git",
+    "پاور بی": "power bi",
+    "پاور بی آی": "power bi",
 }
 
 SYNONYMS = {}
@@ -150,20 +171,24 @@ def score_job(profile_dict: dict, job_dict: dict) -> dict:
 
     # --- logistics (10) ----------------------------------------------------------
     logi_score = 10
+    tehran_metro = {"تهران", "شهرری", "ری", "کرج", "شهریار", "اسلامشهر", "پاکدشت", "ورامین", "پردیس"}
     if remote_only:
-        if "remote" in j_types:
+        if "remote" in j_types or "دورکاری" in j_city:
             logi_score = 10
             reasons.append("آگهی دورکاری است ✓")
         else:
             logi_score = 2
             reasons.append("شما فقط دورکاری می‌خواهید و این آگهی حضوری/هیبرید است")
+    elif "remote" in j_types or "دورکاری" in j_city:
+        logi_score = 10
+        reasons.append("امکان دورکاری برای این آگهی وجود دارد ✓")
     elif p_city and j_city:
-        if p_city in j_city or j_city in p_city:
+        if (p_city in tehran_metro and j_city in tehran_metro) or (p_city in j_city or j_city in p_city):
             logi_score = 10
-            reasons.append("محل کار در شهر شماست")
+            reasons.append("محل کار در شهر یا محدوده سکونت شماست")
         else:
             logi_score = 3
-            reasons.append("آگهی در شهر دیگری است")
+            reasons.append(f"آگهی در شهر {job_dict.get('city') or j_city} است")
 
     total = int(round(skill_score + role_score + level_score + logi_score))
     return {
