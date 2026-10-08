@@ -6,8 +6,8 @@ These schemas define the contract for:
 2. API responses
 3. Structured job representation
 """
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, validator
+from typing import Optional, List
+from pydantic import BaseModel, Field, field_validator
 
 
 class SkillRequirement(BaseModel):
@@ -83,47 +83,41 @@ class AnalyzedJob(BaseModel):
     This schema preserves evidence by distinguishing between:
     - Explicitly stated requirements
     - Inferred or normalized information
+    - Warnings about removed or downgraded claims
     """
 
-    # Basic Information
     title: Optional[str] = Field(None, description="Job title")
     company: Optional[str] = Field(None, description="Company name")
     seniority: Optional[str] = Field(None, description="Seniority level (e.g., entry, mid, senior)")
     employment_type: Optional[str] = Field(None, description="e.g., full-time, part-time, contract")
     location: Optional[str] = Field(None, description="Job location or 'remote'")
 
-    # Skills Requirements
     required_skills: List[SkillRequirement] = Field(default_factory=list, description="Required skills")
     preferred_skills: List[SkillRequirement] = Field(default_factory=list, description="Preferred/optional skills")
     technologies: List[str] = Field(default_factory=list, description="Specific technologies mentioned")
 
-    # Experience
-    experience_requirements: ExperienceRequirement = Field(
-        default_factory=ExperienceRequirement,
+    experience_requirements: Optional[ExperienceRequirement] = Field(
+        default=None,
         description="Experience level requirements"
     )
 
-    # Education
     education_requirements: List[EducationRequirement] = Field(
         default_factory=list,
         description="Education requirements"
     )
 
-    # Certifications & Languages
     certifications: List[str] = Field(default_factory=list, description="Required certifications")
     languages: List[str] = Field(default_factory=list, description="Required languages")
 
-    # Job Details
     responsibilities: List[str] = Field(default_factory=list, description="Main responsibilities")
     other_requirements: List[str] = Field(default_factory=list, description="Other explicit requirements")
 
-    # Compensation
-    salary: SalaryInfo = Field(default_factory=SalaryInfo, description="Salary information")
+    salary: Optional[SalaryInfo] = Field(default=None, description="Salary information")
 
-    # Metadata
+    warnings: List[str] = Field(default_factory=list, description="Non-critical issues during verification")
     source_text: Optional[str] = Field(None, description="Original job description text")
     provider: Optional[str] = Field(None, description="LLM provider used for analysis")
-    confidence: Optional[float] = Field(None, description="Confidence score of analysis (0-1)")
+    model: Optional[str] = Field(None, description="Model name used for analysis")
 
     class Config:
         json_schema_extra = {
@@ -169,42 +163,42 @@ class AnalyzedJob(BaseModel):
                     "max": 150000,
                     "currency": "USD",
                     "source_text": "$100k-$150k annually"
-                }
+                },
+                "warnings": [],
+                "provider": "gemini",
+                "model": "gemini-2.0-flash"
             }
         }
 
-    @validator('confidence')
-    def validate_confidence(cls, v):
-        if v is not None and not (0 <= v <= 1):
-            raise ValueError('confidence must be between 0 and 1')
+    @field_validator('experience_requirements', mode='before')
+    @classmethod
+    def ensure_experience_requirements(cls, v):
+        if v is None:
+            return ExperienceRequirement()
         return v
 
 
 class JobAnalysisRequest(BaseModel):
     """Request payload for job analysis endpoint."""
-    job_description: str = Field(..., min_length=10, description="Raw job description text")
+    description: str = Field(..., min_length=10, description="Raw job description text")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "job_description": "We are looking for a Senior Python Developer..."
+                "description": "We are looking for a Senior Python Developer..."
             }
         }
 
 
 class JobAnalysisResponse(BaseModel):
     """Response payload from job analysis endpoint."""
-    success: bool = Field(..., description="Whether analysis was successful")
-    job: Optional[AnalyzedJob] = Field(None, description="Analyzed job data")
-    error: Optional[str] = Field(None, description="Error message if analysis failed")
-    warnings: List[str] = Field(default_factory=list, description="Non-critical issues during analysis")
+    job_analysis: Optional[AnalyzedJob] = Field(None, description="Analyzed job data")
+    error: Optional[dict] = Field(None, description="Error info if analysis failed")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "success": True,
-                "job": {},
-                "error": None,
-                "warnings": []
+                "job_analysis": {},
+                "error": None
             }
         }
