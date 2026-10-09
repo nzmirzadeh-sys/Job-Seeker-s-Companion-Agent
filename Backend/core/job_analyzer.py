@@ -1,4 +1,4 @@
-```python
+
 """
 Job Analyzer Agent — Specialized agent for structured job analysis.
 
@@ -279,4 +279,3 @@ def analyze_job_description(job_description: str) -> AnalyzedJob:
         ) from exc
 
     return _verify_evidence(job, text)
-```
