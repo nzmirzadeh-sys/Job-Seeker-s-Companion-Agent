@@ -29,15 +29,16 @@ actionهای مجاز:
 - "update_profile": {"patch": {فیلدهای پروفایل}}
 - "search_jobs": {"query": "...", "top": 5}
 - "score_job": {"job_id": 123}
-- "create_resume": {"content": {...}}
-- "edit_resume": {"resume_id": 123, "content": {...}}
+- "create_resume": {"content": {"full_name":"...","headline":"...","email":"...","phone":"","city":"...","summary":"...","skills":[{"name":"..."}],"experiences":[],"projects":[],"educations":[],"languages":[{"name":"فارسی","level":"زبان مادری"}],"links":[]}}
+- "edit_resume": {"resume_id": 123, "content": {...فیلدهایی که باید تغییر کنند}}
 - "none": هیچ ابزاری لازم نیست
 
 قواعد:
 - reply همیشه فارسی، گرم و کوتاه (حداکثر ۳ جمله).
 - اگر کاربر اطلاعاتی مثل مهارت، شهر، سطح یا نقش هدف داد، از update_profile استفاده کن.
 - برای «آگهی مناسب پیدا کن» یا «غربال کن» از search_jobs استفاده کن.
-- برای «رزومه بساز/بهبود بده» از create_resume یا edit_resume استفاده کن.
+- برای «رزومه بساز» از create_resume استفاده کن و حتماً content کامل با همه فیلدها از پروفایل کاربر بساز.
+- برای «رزومه بهبود بده» از edit_resume با resume_id موجود استفاده کن.
 - هیچ متن خارج از JSON ننویس."""
 
 
@@ -71,10 +72,14 @@ def _resume_state(user) -> dict:
 
 
 def build_user_payload(user, message: str, task_hint: str = "chat") -> str:
+    profile_data = _profile_state(user)
+    resume_data = _resume_state(user)
+    # Include email from user model for resume generation
     state = {
         "task": task_hint,
-        "profile": _profile_state(user),
-        "resume": _resume_state(user),
+        "profile": profile_data,
+        "user_email": user.email or "",
+        "resume": resume_data,
         "user_message": message,
     }
     return json.dumps(state, ensure_ascii=False)
@@ -93,10 +98,19 @@ def run_action(user, action: str, args: dict) -> dict:
         if action == "score_job":
             return tools.tool_score_job(user, int(args.get("job_id") or 0))
         if action == "create_resume":
-            return tools.tool_create_resume(user, args.get("content"))
+            # Support both "content" and "resume" keys from different providers
+            content = args.get("content") or args.get("resume")
+            return tools.tool_create_resume(user, content)
         if action == "edit_resume":
+            resume_id = int(args.get("resume_id") or 0)
+            # If no resume_id given, use the user's active resume
+            if not resume_id:
+                from apps.resumes.models import Resume as ResumeModel
+                active = ResumeModel.objects.filter(user=user, active=True).first()
+                if active:
+                    resume_id = active.id
             return tools.tool_edit_resume(
-                user, int(args.get("resume_id") or 0), args.get("content") or {}
+                user, resume_id, args.get("content") or {}
             )
         # if action == "translate_resume":
         #     return tools.tool_translate_resume(user, int(args.get("resume_id") or 0))

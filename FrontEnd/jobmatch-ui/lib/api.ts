@@ -82,7 +82,9 @@ export interface Job {
   salary_min: number | null;
   salary_max: number | null;
   description: string;
+  url: string;
   source: string;
+  created_at?: string;
 }
 
 export interface MatchRow {

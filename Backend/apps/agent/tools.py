@@ -88,14 +88,33 @@ def tool_score_job(user, job_id: int) -> dict:
 
 
 def _default_resume_content(profile: Profile) -> dict:
+    skills_list = [{"name": s} for s in (profile.skills or [])]
+    # Build a meaningful summary from profile data
+    parts = []
+    if profile.full_name or profile.user.get_full_name():
+        name = profile.full_name or profile.user.get_full_name()
+        parts.append(name)
+    if profile.target_role:
+        parts.append(f"متخصص در حوزه {profile.target_role}")
+    if profile.experience_years:
+        parts.append(f"با {profile.experience_years} سال سابقه کاری")
+    elif profile.level == "junior":
+        parts.append("در مرحله شروع حرفه‌ای")
+    if profile.city:
+        parts.append(f"مقیم {profile.city}")
+    if profile.skills:
+        top_skills = (profile.skills or [])[:5]
+        parts.append(f"مهارت‌های اصلی: {', '.join(top_skills)}")
+    summary = "، ".join(parts) + "." if parts else ""
+
     return {
         "full_name": profile.full_name or profile.user.get_full_name() or profile.user.username,
         "headline": profile.headline or profile.target_role or "",
         "email": profile.user.email or "",
         "phone": "",
         "city": profile.city or "",
-        "summary": "",
-        "skills": [{"name": s} for s in (profile.skills or [])],
+        "summary": summary,
+        "skills": skills_list,
         "experiences": [],
         "projects": [],
         "educations": (
@@ -113,9 +132,15 @@ def tool_create_resume(user, content: dict | None = None) -> dict:
     base = _default_resume_content(profile)
     if content:
         for key, value in content.items():
-            if value in (None, "", [], {}):
+            # Allow overwriting with agent-provided content unless it's empty
+            if value is None or value == "" or value == [] or value == {}:
                 continue
             base[key] = value
+    # Ensure required fields always have values from profile if agent didn't provide them
+    if not base.get("full_name"):
+        base["full_name"] = profile.user.username
+    if not base.get("headline") and profile.target_role:
+        base["headline"] = profile.target_role
     last = (
         Resume.objects.filter(user=user).order_by("-version").first()
     )
