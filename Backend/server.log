@@ -1,4 +1,0 @@
-[06/Oct/2026 00:32:50] "POST /api/auth/token/ HTTP/1.1" 200 638
-[06/Oct/2026 00:32:50] "POST /api/chat/ HTTP/1.1" 200 283
-[06/Oct/2026 00:34:08] "GET /api/health/ HTTP/1.1" 200 16
-[06/Oct/2026 00:36:37] "GET /api/accounts/profile/ HTTP/1.1" 200 230
