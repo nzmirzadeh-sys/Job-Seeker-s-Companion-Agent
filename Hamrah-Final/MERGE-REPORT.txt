@@ -1,0 +1,113 @@
+HAMRAH MERGE REPORT
+===================
+
+Friend-only files copied: 2
+  COPIED: Backend/apps/resumes/translation.py
+  COPIED: .freebuff/project-id
+
+Identical files: 67
+  SAME: JOB_ANALYZER_IMPLEMENTATION.md
+  SAME: FrontEnd/jobmatch-ui/postcss.config.mjs
+  SAME: FrontEnd/jobmatch-ui/README.md
+  SAME: FrontEnd/jobmatch-ui/.gitignore
+  SAME: FrontEnd/jobmatch-ui/components.json
+  SAME: FrontEnd/jobmatch-ui/tsconfig.json
+  SAME: FrontEnd/jobmatch-ui/AGENTS.md
+  SAME: FrontEnd/jobmatch-ui/CLAUDE.md
+  SAME: FrontEnd/jobmatch-ui/app/favicon.ico
+  SAME: FrontEnd/jobmatch-ui/app/analyzer/page.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/tabs.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/card.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/progress.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/label.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/dialog.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/badge.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/separator.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/button.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/textarea.tsx
+  SAME: FrontEnd/jobmatch-ui/components/ui/input.tsx
+  SAME: FrontEnd/jobmatch-ui/public/file.svg
+  SAME: FrontEnd/jobmatch-ui/public/vercel.svg
+  SAME: FrontEnd/jobmatch-ui/public/next.svg
+  SAME: FrontEnd/jobmatch-ui/public/globe.svg
+  SAME: FrontEnd/jobmatch-ui/public/window.svg
+  SAME: FrontEnd/jobmatch-ui/lib/utils.ts
+  SAME: Backend/manage.py
+  SAME: Backend/core/__init__.py
+  SAME: Backend/config/agent_views.py
+  SAME: Backend/config/asgi.py
+  SAME: Backend/config/wsgi.py
+  SAME: Backend/apps/__init__.py
+  SAME: Backend/apps/resumes/models.py
+  SAME: Backend/apps/resumes/serializers.py
+  SAME: Backend/apps/resumes/__init__.py
+  SAME: Backend/apps/resumes/pdf.py
+  SAME: Backend/apps/resumes/apps.py
+  SAME: Backend/apps/resumes/admin.py
+  SAME: Backend/apps/resumes/migrations/__init__.py
+  SAME: Backend/apps/resumes/migrations/0001_initial.py
+  SAME: Backend/apps/agent/models.py
+  SAME: Backend/apps/agent/__init__.py
+  SAME: Backend/apps/agent/apps.py
+  SAME: Backend/apps/agent/admin.py
+  SAME: Backend/apps/agent/urls.py
+  SAME: Backend/apps/agent/migrations/__init__.py
+  SAME: Backend/apps/agent/migrations/0001_initial.py
+  SAME: Backend/apps/accounts/models.py
+  SAME: Backend/apps/accounts/serializers.py
+  SAME: Backend/apps/accounts/__init__.py
+  SAME: Backend/apps/accounts/apps.py
+  SAME: Backend/apps/accounts/admin.py
+  SAME: Backend/apps/accounts/urls.py
+  SAME: Backend/apps/accounts/views.py
+  SAME: Backend/apps/accounts/migrations/__init__.py
+  SAME: Backend/apps/accounts/migrations/0001_initial.py
+  SAME: Backend/apps/jobs/scraper.py
+  SAME: Backend/apps/jobs/models.py
+  SAME: Backend/apps/jobs/serializers.py
+  SAME: Backend/apps/jobs/__init__.py
+  SAME: Backend/apps/jobs/apps.py
+  SAME: Backend/apps/jobs/admin.py
+  SAME: Backend/apps/jobs/urls.py
+  SAME: Backend/apps/jobs/migrations/__init__.py
+  SAME: Backend/apps/jobs/migrations/0001_initial.py
+  SAME: Backend/apps/jobs/management/__init__.py
+  SAME: Backend/apps/jobs/management/commands/__init__.py
+
+Differing files preserved in Compare-Files: 27
+  BOTH VERSIONS KEPT: README.md
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/package-lock.json
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/package.json
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/next.config.ts
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/app/layout.tsx
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/app/page.tsx
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/app/globals.css
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/app/resume/page.tsx
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/app/jobs/page.tsx
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/app/onboarding/page.tsx
+  BOTH VERSIONS KEPT: FrontEnd/jobmatch-ui/lib/api.ts
+  BOTH VERSIONS KEPT: Backend/requirements.txt
+  BOTH VERSIONS KEPT: Backend/README.md
+  BOTH VERSIONS KEPT: Backend/core/llm.py
+  BOTH VERSIONS KEPT: Backend/core/schemas.py
+  BOTH VERSIONS KEPT: Backend/core/job_analyzer.py
+  BOTH VERSIONS KEPT: Backend/config/settings.py
+  BOTH VERSIONS KEPT: Backend/config/urls.py
+  BOTH VERSIONS KEPT: Backend/templates/resumes/resume_pdf.html
+  BOTH VERSIONS KEPT: Backend/apps/resumes/urls.py
+  BOTH VERSIONS KEPT: Backend/apps/resumes/views.py
+  BOTH VERSIONS KEPT: Backend/apps/agent/tools.py
+  BOTH VERSIONS KEPT: Backend/apps/agent/engine.py
+  BOTH VERSIONS KEPT: Backend/apps/agent/views.py
+  BOTH VERSIONS KEPT: Backend/apps/jobs/matching.py
+  BOTH VERSIONS KEPT: Backend/apps/jobs/views.py
+  BOTH VERSIONS KEPT: Backend/apps/jobs/management/commands/seed_demo.py
+
+Excluded sensitive/generated files: 5
+  EXCLUDED: .DS_Store
+  EXCLUDED: FrontEnd/next.log
+  EXCLUDED: Backend/.DS_Store
+  EXCLUDED: Backend/db.sqlite3
+  EXCLUDED: Backend/server.log
+
+No GitHub push was performed.

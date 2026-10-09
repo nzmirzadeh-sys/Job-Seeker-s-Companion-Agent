@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!-- English translation template option commented out:
+<html lang="{% if data.is_english or data.language == 'en' %}en{% else %}fa{% endif %}" dir="{% if data.is_english or data.language == 'en' %}ltr{% else %}rtl{% endif %}">
+-->
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>{{ resume.title }}</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Vazirmatn", "Tahoma", sans-serif;
+    direction: rtl;
+    color: #1e293b;
+    font-size: 12px;
+    line-height: 1.7;
+    margin: 0;
+  }
+  header { border-bottom: 3px solid #4f46e5; padding-bottom: 10px; margin-bottom: 14px; }
+  h1 { font-size: 24px; margin: 0 0 4px; color: #111827; font-weight: 800; letter-spacing: -0.02em; }
+  .headline { color: #4f46e5; font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+  .contact { color: #64748b; font-size: 11px; margin: 0; }
+  .contact span { margin-inline-end: 14px; display: inline-block; }
+  h2 {
+    font-size: 13px; color: #1e1b4b; margin: 14px 0 6px;
+    border-bottom: 1px solid #e2e8f0; padding-bottom: 3px;
+    font-weight: 700;
+  }
+  .item { margin-bottom: 10px; }
+  .item-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .item-title { font-weight: 700; color: #0f172a; font-size: 12.5px; }
+  .item-sub { color: #64748b; font-size: 11px; font-weight: 500; }
+  .item-desc { margin: 3px 0 4px; color: #334155; font-size: 11.5px; }
+  .chips { margin: 4px 0; }
+  .chip {
+    display: inline-block; background: #eef2ff; color: #3730a3;
+    border: 1px solid #e0e7ff;
+    border-radius: 6px; padding: 2px 8px; margin: 2px; font-size: 11px; font-weight: 500;
+  }
+  ul { margin: 3px 0 0; padding-inline-start: 18px; }
+  li { margin-bottom: 2px; color: #334155; font-size: 11.5px; }
+  .summary { background: #f8fafc; border-right: 3px solid #6366f1; border-radius: 4px; padding: 8px 12px; color: #334155; font-size: 11.5px; line-height: 1.6; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>{{ data.full_name|default:resume.title }}</h1>
+    {% if data.headline %}<p class="headline">{{ data.headline }}</p>{% endif %}
+    <p class="contact">
+      {% if data.email %}<span>✉ {{ data.email }}</span>{% endif %}
+      {% if data.phone %}<span>☎ {{ data.phone }}</span>{% endif %}
+      {% if data.city %}<span>📍 {{ data.city }}</span>{% endif %}
+      {% for l in links %}<span>🔗 {{ l.label }}: {{ l.url }}</span>{% endfor %}
+    </p>
+  </header>
+
+  {% if data.summary %}
+  <h2>خلاصهٔ حرفه‌ای</h2>
+  <div class="summary">{{ data.summary }}</div>
+  {% endif %}
+
+  {% if skills %}
+  <h2>مهارت‌ها</h2>
+  <div class="chips">
+    {% for s in skills %}<span class="chip">{{ s.name|default:s }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if experiences %}
+  <h2>سوابق شغلی و شرح وظایف</h2>
+  {% for e in experiences %}
+  <div class="item">
+    <div class="item-title">{{ e.title }} — {{ e.company }}</div>
+    <div class="item-sub">
+      {{ e.start }}
+      {% if e.end %}تا {{ e.end }}{% else %}تا کنون{% endif %}
+    </div>
+    {% if e.description %}<div class="item-desc">{{ e.description }}</div>{% endif %}
+    {% if e.bullets %}
+    <ul>
+      {% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if projects %}
+  <h2>پروژه‌ها</h2>
+  {% for p in projects %}
+  <div class="item">
+    <div class="item-title">{{ p.name }}</div>
+    {% if p.description %}<div class="item-desc">{{ p.description }}</div>{% endif %}
+    {% if p.technologies %}
+    <div class="chips">
+      {% for t in p.technologies %}<span class="chip">{{ t }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if educations %}
+  <h2>تحصیلات</h2>
+  {% for e in educations %}
+  <div class="item">
+    <div class="item-title">{{ e.degree }} — {{ e.school }}</div>
+    <div class="item-sub">
+      {{ e.start }}
+      {% if e.end %}تا {{ e.end }}{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% if data.languages %}
+  <h2>زبان‌ها</h2>
+  <div class="chips">
+    {% for l in data.languages %}
+      <span class="chip">{{ l.name|default:l }}{% if l.level %} ({{ l.level }}){% endif %}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+</body>
+</html>
