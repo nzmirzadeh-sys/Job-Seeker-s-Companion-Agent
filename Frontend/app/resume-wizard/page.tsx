@@ -54,7 +54,7 @@ export default function ResumeWizardPage() {
   };
 
   return (
-    <main className="flex-1 min-h-screen p-4" style={{ backgroundColor: '#FBF7EC' }}>
+    <main className="theme-paper flex-1 min-h-screen p-4" style={{ backgroundColor: '#FBF7EC' }}>
       <div className="mx-auto max-w-6xl">
         <RetroWindow
           title="HAMRAH.EXE - ویزارد ساخت رزومه"

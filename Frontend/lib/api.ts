@@ -165,6 +165,20 @@ export interface MatchRowJob {
   required_skills?: string[];
   optional_skills?: string[];
   job_types?: string[];
+  salary_min?: number | null;
+  salary_max?: number | null;
+  url?: string;
+  source?: string;
+  created_at?: string;
+}
+
+export type MatchStatus = "new" | "saved" | "dismissed" | "applied";
+
+export interface MatchBreakdown {
+  skills: number;
+  role: number;
+  level: number;
+  logistics: number;
 }
 
 export interface MatchRow {
@@ -172,12 +186,22 @@ export interface MatchRow {
   score: number;
   reasons?: string[];
   missing_skills?: string[];
-  breakdown?: {
-    skills: number;
-    role: number;
-    level: number;
-    logistics: number;
-  };
+  breakdown?: MatchBreakdown;
+  status?: MatchStatus;
+}
+
+// ── Job detail (single job's score breakdown) ───────
+export interface JobMatchDetail {
+  score: number;
+  breakdown: MatchBreakdown;
+  reasons: string[];
+  missing_skills: string[];
+  job: MatchRowJob;
+}
+
+export interface JobFeedbackResponse {
+  ok: boolean;
+  status: MatchStatus;
 }
 
 // ── Resume ───────────────────────────────────────────
@@ -670,6 +694,29 @@ export async function analyzeMatch(params?: {
   return fetchAPI<AnalyzeMatchResponse>('/match/analyze/', {
     method: 'POST',
     body: JSON.stringify(params || {}),
+  });
+}
+
+// ═════════════════════════════════════════════════════
+// JOBS ENDPOINTS
+// ═════════════════════════════════════════════════════
+
+/** GET /api/jobs/<id>/match/ — جزئیات کامل تناسب یک آگهی به‌همراه خود آگهی */
+export async function getJobMatchDetail(
+  jobId: number | string
+): Promise<JobMatchDetail> {
+  return fetchAPI<JobMatchDetail>(`/jobs/${jobId}/match/`);
+}
+
+/** POST /api/jobs/<id>/feedback/ — ذخیره یا ردکردن یک آگهی */
+export async function sendJobFeedback(
+  jobId: number | string,
+  relevant: boolean,
+  reason?: string
+): Promise<JobFeedbackResponse> {
+  return fetchAPI<JobFeedbackResponse>(`/jobs/${jobId}/feedback/`, {
+    method: "POST",
+    body: JSON.stringify({ relevant, reason: reason || "" }),
   });
 }
 

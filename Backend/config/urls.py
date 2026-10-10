@@ -64,6 +64,9 @@ api = [
     path("match/", include("apps.match.urls")),
     # ---- interview ----
     path("interview/", include("apps.interview.urls")),
+    # ---- specialised agents ----
+    path("resume-writer/", include("apps.resume_writer.urls")),
+    path("evidence/", include("apps.evidence_validator.urls")),
 ]
 
 urlpatterns = [

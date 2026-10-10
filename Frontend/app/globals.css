@@ -1,256 +1,139 @@
-@import "https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
-/* ═══════════════════════════════════════════════════
-   RETRO DESIGN TOKENS - پالتِ زرد و مشکی HAMRAH.EXE
-   ═══════════════════════════════════════════════════ */
-
 :root {
-  /* Backgrounds */
-  --bg-primary: #FBF7EC;
-  --bg-secondary: #FCE9A8;
-  --bg-tertiary: #F2C230;
-
-  /* Borders */
-  --border-primary: #141311;
-  --border-secondary: #8B8680;
-  --border-light: #C9C3BB;
-
-  /* Text */
-  --text-primary: #141311;
-  --text-secondary: #5A5450;
-  --text-tertiary: #8B8680;
-  --text-light: #C9C3BB;
-  --text-inverse: #FBF7EC;
-
-  /* Accent Colors */
-  --accent-primary: #F2C230;
-  --accent-hover: #E6B717;
-  --accent-active: #D9A815;
-
-  /* Status Colors */
-  --status-success: #3B7A4A;
-  --status-warning: #C98A1F;
-  --status-error: #B23A2E;
-  --status-info: #F2C230;
-
-  /* Special */
-  --status-highlight: #FCE9A8;
-  --status-disabled: #C9C3BB;
-
-  /* Typography */
-  --font-mono: 'Courier New', Courier, monospace;
-  --font-body: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 24px;
-  --space-2xl: 32px;
-
-  /* Borders */
-  --border-thin: 1px;
-  --border-normal: 2px;
-  --border-thick: 3px;
-
-  /* Radius (Retro = no radius) */
-  --radius: 0px;
+  --bg-0: #070614;
+  --bg-1: #0e0b2b;
+  --bg-2: #1b1147;
+  --navy: #0f1535;
+  --indigo: #4f46e5;
+  --violet: #6b1cd9;
+  --purple: #8b5cf6;
+  --lavender: #c4b5fd;
+  --text: #f4f2ff;
+  --muted: #a9a4d0;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --font-vazirmatn: 'Vazirmatn', sans-serif;
+  --font-inter: 'Inter', sans-serif;
 }
 
-/* Legacy theme support */
 @theme inline {
-  --color-background: var(--bg-primary);
-  --color-foreground: var(--text-primary);
-  --color-card: var(--bg-secondary);
-  --color-card-foreground: var(--text-primary);
-  --color-primary: var(--accent-primary);
-  --color-primary-foreground: var(--text-inverse);
-  --color-secondary: var(--bg-secondary);
-  --color-secondary-foreground: var(--text-primary);
-  --color-destructive: var(--status-error);
-  --color-destructive-foreground: var(--text-inverse);
-  --color-border: var(--border-primary);
-  --color-input: var(--bg-secondary);
-  --radius: 0px;
-  --font-sans: var(--font-body);
+  --font-sans: var(--font-vazirmatn);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+  --radius-lg: 0.9rem;
 }
 
-/* ═══════════════════════════════════════════════════
-   GLOBAL STYLES
-   ═══════════════════════════════════════════════════ */
+/* ───────── Design tokens: KARVIA purple glass (default, dark) ───────── */
+:root {
+  color-scheme: dark;
+  --background: #0e0b2b;
+  --foreground: #f4f2ff;
+  --card: rgba(255, 255, 255, 0.06);
+  --card-foreground: #f4f2ff;
+  --primary: #7c5cfc;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.1);
+  --secondary-foreground: #f4f2ff;
+  --muted: rgba(255, 255, 255, 0.09);
+  --muted-foreground: #a9a4d0;
+  --accent: rgba(139, 92, 246, 0.25);
+  --accent-foreground: #ffffff;
+  --destructive: #e5484d;
+  --border: rgba(255, 255, 255, 0.15);
+  --ring: #a78bfa;
+
+  /* legacy (retro) variable names still used by older pages */
+  --bg-primary: transparent;
+  --bg-secondary: rgba(255, 255, 255, 0.07);
+  --text-primary: #f4f2ff;
+  --text-secondary: #a9a4d0;
+  --border-color: rgba(255, 255, 255, 0.18);
+  --border-primary: rgba(255, 255, 255, 0.28);
+  --border-light: rgba(255, 255, 255, 0.1);
+  --status-success: #2fb36d;
+  --status-error: #e5484d;
+}
+
+/* ───────── Paper theme: résumé builder pages (cream document look) ───────── */
+.theme-paper {
+  color-scheme: light;
+  --background: #fbf7ec;
+  --foreground: #141311;
+  --card: #fffdf6;
+  --card-foreground: #141311;
+  --primary: #f2c230;
+  --primary-foreground: #141311;
+  --secondary: #fce9a8;
+  --secondary-foreground: #141311;
+  --muted: #efe8d2;
+  --muted-foreground: #5a5450;
+  --accent: #fce9a8;
+  --accent-foreground: #141311;
+  --border: #141311;
+  --ring: #d9a815;
+  --bg-primary: #fbf7ec;
+  --bg-secondary: #fce9a8;
+  --text-primary: #141311;
+  --text-secondary: #5a5450;
+  --border-color: #141311;
+  --border-primary: #141311;
+  --border-light: #c9c3bb;
+  --status-success: #3b7a4a;
+  --status-error: #b23a2e;
+  color: #141311;
+}
 
 * {
-  /* Retro: بدون antialiasing smooth */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
 }
 
 html {
   direction: rtl;
-  background-color: var(--bg-primary);
+  scroll-behavior: smooth;
+  background: var(--bg-0);
 }
 
 body {
-  font-family: var(--font-body);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.5;
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-vazirmatn), sans-serif;
+  background:
+    radial-gradient(circle at center, rgba(27, 17, 71, 0.9) 0%, rgba(14, 11, 43, 0.96) 35%, rgba(7, 6, 20, 1) 70%);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-
-/* ═══════════════════════════════════════════════════
-   RETRO WINDOW STYLES
-   ═══════════════════════════════════════════════════ */
-
-.retro-window {
-  background-color: var(--bg-secondary);
-  border: var(--border-normal) solid var(--border-primary);
-  box-shadow: var(--border-thin) var(--border-thin) 0 rgba(0, 0, 0, 0.25);
-}
-
-.retro-window-title {
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-hover));
-  color: var(--text-inverse);
-  padding: var(--space-sm) var(--space-md);
-  font-weight: bold;
-  font-size: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: var(--border-thin) solid var(--border-primary);
-}
-
-.retro-window-controls {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.retro-window-button {
-  width: 16px;
-  height: 14px;
-  border: var(--border-thin) solid var(--border-primary);
-  background-color: var(--bg-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  color: var(--text-primary);
-}
-
-.retro-window-button:hover {
-  background-color: var(--bg-tertiary);
-}
-
-/* ═══════════════════════════════════════════════════
-   RETRO BUTTON STYLES
-   ═══════════════════════════════════════════════════ */
-
-.retro-btn {
-  background-color: var(--bg-secondary);
-  border: var(--border-normal) solid var(--border-primary);
-  color: var(--text-primary);
-  padding: var(--space-sm) var(--space-md);
-  font-family: var(--font-body);
-  font-size: 14px;
-  cursor: pointer;
-  font-weight: bold;
-  outline: none;
-  transition: all 50ms linear;
-}
-
-.retro-btn:hover:not(:disabled) {
-  background-color: var(--bg-tertiary);
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.retro-btn:active:not(:disabled) {
-  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5);
-}
-
-.retro-btn:focus-visible {
-  outline: 2px dotted var(--accent-primary);
-  outline-offset: 2px;
-}
-
-.retro-btn:disabled {
-  background-color: var(--status-disabled);
-  color: var(--text-light);
-  cursor: not-allowed;
-}
-
-.retro-btn.primary {
-  background-color: var(--accent-primary);
-  color: var(--text-inverse);
-  border-color: var(--accent-active);
-}
-
-.retro-btn.primary:hover:not(:disabled) {
-  background-color: var(--accent-hover);
-}
-
-.retro-btn.primary:active:not(:disabled) {
-  background-color: var(--accent-active);
-}
-
-/* ═══════════════════════════════════════════════════
-   RETRO CARD STYLES
-   ═══════════════════════════════════════════════════ */
-
-.retro-card {
-  background-color: var(--bg-primary);
-  border: var(--border-thin) dotted var(--border-primary);
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
-}
-
-.retro-card.with-border {
-  border-style: solid;
-}
-
-.retro-card.error {
-  border-color: var(--status-error);
-  background-color: rgba(204, 0, 0, 0.05);
-}
-
-.retro-card.success {
-  border-color: var(--status-success);
-  background-color: rgba(0, 102, 51, 0.05);
-}
-
-.retro-card.warning {
-  border-color: var(--status-warning);
-  background-color: rgba(204, 102, 0, 0.05);
-}
-
-/* ═══════════════════════════════════════════════════
-   RETRO INPUT STYLES
-   ═══════════════════════════════════════════════════ */
 
 input,
-textarea {
-  background-color: var(--bg-primary);
-  border: var(--border-thin) solid var(--border-primary);
-  color: var(--text-primary);
-  padding: var(--space-sm);
-  font-family: var(--font-body);
-  font-size: 14px;
+button,
+textarea,
+select {
+  font: inherit;
 }
 
-input:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  box-shadow: inset 0 0 0 1px var(--accent-primary);
+button {
+  cursor: pointer;
 }
-
-/* ═══════════════════════════════════════════════════
-   ACCESSIBILITY
-   ═══════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -259,10 +142,102 @@ textarea:focus {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* RTL support */
-[dir="rtl"] .progress-rtl {
+[dir='rtl'] .progress-rtl {
   direction: ltr;
+}
+
+
+/* ───────── Base polish ───────── */
+@layer base {
+  * { border-color: var(--border); }
+  ::selection { background: rgba(139, 92, 246, 0.45); color: #fff; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  body { line-height: 1.7; }
+  h1, h2, h3 { line-height: 1.4; }
+  ::placeholder { color: var(--muted-foreground); opacity: 0.8; }
+  select option { color: #141311; background: #fff; }
+  .theme-paper select option { color: #141311; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(139, 92, 246, 0.45) transparent; }
+}
+
+/* soft page entrance on every route */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+main { animation: page-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ───────── Retro components, re-skinned to the design tokens ───────── */
+.retro-window {
+  border: 1px solid var(--border-primary);
+  border-radius: 1rem;
+  background: var(--card);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 50px rgba(8, 6, 30, 0.35);
+  overflow: hidden;
+  color: var(--text-primary);
+}
+.retro-window-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.45), rgba(79, 70, 229, 0.3));
+  border-bottom: 1px solid var(--border-primary);
+  color: #fff;
+}
+.theme-paper .retro-window-title { background: #f2c230; color: #141311; }
+.retro-window-controls { display: flex; gap: 0.35rem; }
+.retro-window-button {
+  width: 1.25rem; height: 1.25rem; border-radius: 999px;
+  border: 1px solid var(--border-primary);
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit; font-size: 0.7rem; line-height: 1;
+  transition: background 0.2s;
+}
+.retro-window-button:hover { background: rgba(255, 255, 255, 0.28); }
+.retro-card {
+  border: 1px solid var(--border-color);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.retro-card.with-border { border-color: var(--border-primary); }
+.retro-card.error { border-color: var(--status-error); background: color-mix(in srgb, var(--status-error) 14%, transparent); }
+.retro-card.success { border-color: var(--status-success); background: color-mix(in srgb, var(--status-success) 14%, transparent); }
+.retro-card.warning { border-color: #d98a1c; background: rgba(217, 138, 28, 0.14); }
+.retro-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  transition: transform 0.15s, filter 0.2s, background 0.2s;
+}
+.retro-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.retro-btn:active { transform: translateY(1px); }
+.retro-btn.primary {
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  border-color: transparent; color: #fff;
+  box-shadow: 0 10px 24px rgba(94, 80, 255, 0.35);
+}
+.retro-btn.primary:hover { filter: brightness(1.1); }
+.theme-paper .retro-btn.primary { background: #f2c230; color: #141311; border-color: #141311; box-shadow: none; }
+.theme-paper .retro-btn { background: #fffdf6; }
+.theme-paper .retro-window, .theme-paper .retro-card { backdrop-filter: none; box-shadow: 3px 3px 0 #141311; }
+
+/* reusable glass surface */
+.glass {
+  border: 1px solid var(--border);
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 1.25rem;
 }

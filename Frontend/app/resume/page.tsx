@@ -289,7 +289,7 @@ export default function ResumePage() {
 
   return (
     <main
-      className="flex-1 min-h-screen p-4"
+      className="theme-paper flex-1 min-h-screen p-4"
       style={{ backgroundColor: "#FBF7EC" }}
     >
       <div className="mx-auto max-w-4xl">

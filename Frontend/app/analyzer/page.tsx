@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,7 +122,11 @@ const SAMPLES = [
 
 export default function AnalyzerPage() {
   const router = useRouter();
-  const [inputText, setInputText] = useState("");
+  const [inputText, setInputText] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const stored = localStorage.getItem("jm_analyze_text");
+    return stored && stored.trim().length >= 40 ? stored : "";
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzedJob | null>(null);
@@ -129,13 +135,12 @@ export default function AnalyzerPage() {
   const [expandedQuote, setExpandedQuote] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("jm_analyze_text");
-      if (stored && stored.trim().length >= 40) {
-        localStorage.removeItem("jm_analyze_text");
-        setInputText(stored);
-        handleAnalyze(stored);
-      }
+    if (typeof window === "undefined") return;
+
+    const stored = localStorage.getItem("jm_analyze_text");
+    if (stored && stored.trim().length >= 40) {
+      localStorage.removeItem("jm_analyze_text");
+      void handleAnalyze(stored);
     }
   }, []);
 

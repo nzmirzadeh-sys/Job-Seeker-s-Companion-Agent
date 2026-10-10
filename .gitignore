@@ -1,6 +1,14 @@
-
-# Do not commit ZIP archives
-/zip/
-
-# Do not commit ZIP archives
-/zip/
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+Backend/db.sqlite3
+Backend/media/
+Backend/staticfiles/
+# Node
+node_modules/
+.next/
+*.tsbuildinfo
+.DS_Store

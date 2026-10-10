@@ -28,6 +28,12 @@ def analyze_career(request):
         agent = CareerIntelligenceAgent()
         result = agent.analyze(message, memory_service=service)
         persisted = agent.persist(result, service)
+        # Hidden-skill evidence is a list of pydantic objects; make it plain JSON for clients.
+        for hidden in persisted.get("hidden_skills", []):
+            hidden["evidence"] = [
+                e.model_dump(mode="json") if hasattr(e, "model_dump") else e
+                for e in hidden.get("evidence") or []
+            ]
         return Response({"career_intelligence": result.model_dump(mode="json"), "persisted": persisted})
     except CareerIntelligenceError as exc:
         return Response({"error": exc.public()}, status=_CAREER_STATUS.get(exc.code, 502))

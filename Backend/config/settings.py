@@ -34,6 +34,8 @@ INSTALLED_APPS = [
     "apps.interview",
     "apps.datasets",
     "apps.applications",
+    "apps.resume_writer",
+    "apps.evidence_validator",
 ]
 
 MIDDLEWARE = [

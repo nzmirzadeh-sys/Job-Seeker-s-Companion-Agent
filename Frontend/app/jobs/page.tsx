@@ -1,22 +1,32 @@
-
 "use client";
 
+import type { MouseEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import {
   api,
   getToken,
+  sendJobFeedback,
   streamChat,
-  type MatchDecisionResult,
   type MatchRow,
 } from "@/lib/api";
-import RetroWindow from "@/components/retro/RetroWindow";
-import { Search, Sparkles } from "lucide-react";
+import JobsSidebar from "@/components/jobs/JobsSidebar";
+import MatchScoreBadge from "@/components/jobs/MatchScoreBadge";
+import BreakdownBars from "@/components/jobs/BreakdownBars";
+import JobMetaChips from "@/components/jobs/JobMetaChips";
+import SkillChips from "@/components/jobs/SkillChips";
+import { jobsTheme } from "@/components/jobs/theme";
+import {
+  MessageCircle,
+  RefreshCw,
+  Search,
+  Send,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+  X,
+} from "lucide-react";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -29,15 +39,10 @@ export default function JobsPage() {
   const [rows, setRows] = useState<MatchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  const [selected, setSelected] = useState<MatchRow | null>(null);
-  const [decisionFor, setDecisionFor] = useState<MatchRow | null>(null);
-  const [decisionResult, setDecisionResult] =
-    useState<MatchDecisionResult | null>(null);
-  const [decisionLoading, setDecisionLoading] = useState(false);
-  const [decisionError, setDecisionError] = useState<string | null>(null);
-
   const [searchText, setSearchText] = useState("");
+  const [feedbackBusyId, setFeedbackBusyId] = useState<string | number | null>(
+    null,
+  );
 
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([
@@ -65,9 +70,7 @@ export default function JobsPage() {
       console.error("خطا در بارگذاری آگهی‌ها:", error);
 
       setLoadError(
-        error instanceof Error
-          ? error.message
-          : "دریافت آگهی‌ها ناموفق بود.",
+        error instanceof Error ? error.message : "دریافت آگهی‌ها ناموفق بود.",
       );
     } finally {
       setLoading(false);
@@ -87,55 +90,24 @@ export default function JobsPage() {
     chatBottom.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function analyzeDecision(row: MatchRow) {
-    setDecisionFor(row);
-    setDecisionResult(null);
-    setDecisionError(null);
-    setDecisionLoading(true);
+  async function handleFeedback(
+    event: MouseEvent,
+    row: MatchRow,
+    relevant: boolean,
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setFeedbackBusyId(row.job.id);
 
     try {
-      const data = await api<{ match_result: MatchDecisionResult }>(
-        "/match/analyze/",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            job_id: row.job.id,
-            explain_with_llm: true,
-          }),
-        },
-      );
-
-      setDecisionResult(data.match_result);
+      await sendJobFeedback(row.job.id, relevant);
+      setRows((current) => current.filter((item) => item.job.id !== row.job.id));
     } catch (error) {
-      console.error("خطا در تحلیل تناسب آگهی:", error);
-
-      setDecisionError(
-        error instanceof Error
-          ? error.message
-          : "تحلیل آگهی ناموفق بود.",
-      );
+      console.error("خطا در ثبت بازخورد آگهی:", error);
     } finally {
-      setDecisionLoading(false);
+      setFeedbackBusyId(null);
     }
-  }
-
-  function decisionLabel(value: string) {
-    const labels: Record<string, string> = {
-      strong_match: "تناسب قوی",
-      good_match: "تناسب خوب",
-      partial_match: "تناسب نسبی",
-      weak_match: "تناسب ضعیف",
-      not_recommended: "توصیه نمی‌شود",
-      needs_more_information: "نیازمند اطلاعات بیشتر",
-    };
-
-    return labels[value] || value;
-  }
-
-  function statusIcon(status: string) {
-    if (status === "match") return "✓";
-    if (status === "conflict") return "✕";
-    return "!";
   }
 
   async function sendChat(message?: string) {
@@ -143,10 +115,7 @@ export default function JobsPage() {
 
     if (!text || chatBusy) return;
 
-    setMessages((current) => [
-      ...current,
-      { role: "user", content: text },
-    ]);
+    setMessages((current) => [...current, { role: "user", content: text }]);
     setChatInput("");
     setChatBusy(true);
 
@@ -167,10 +136,7 @@ export default function JobsPage() {
       if (!receivedAssistantMessage) {
         setMessages((current) => [
           ...current,
-          {
-            role: "assistant",
-            content: "پاسخی از ایجنت دریافت نشد.",
-          },
+          { role: "assistant", content: "پاسخی از ایجنت دریافت نشد." },
         ]);
       }
     } catch (error) {
@@ -193,551 +159,262 @@ export default function JobsPage() {
 
     if (!query) return true;
 
-    return [
-      row.job.title,
-      row.job.company,
-      row.job.city,
-    ].some((value) => value?.toLocaleLowerCase().includes(query));
+    return [row.job.title, row.job.company, row.job.city].some((value) =>
+      value?.toLocaleLowerCase().includes(query),
+    );
   });
 
   return (
     <main
-      className="flex-1 min-h-screen p-4"
-      style={{ backgroundColor: "#FBF7EC", color: "#141311" }}
+      className="flex min-h-screen gap-4 p-4 md:p-6"
+      style={{ background: jobsTheme.pageBg, color: jobsTheme.text }}
     >
-      <div className="mx-auto max-w-7xl">
-        <RetroWindow
-          title="HAMRAH.EXE - فرصت‌های شغلی"
-          menu={[
-            { title: "File" },
-            { title: "Edit" },
-            { title: "Format" },
-            { title: "View" },
-            { title: "Help" },
-          ]}
-          className="min-h-screen"
-          contentClassName="flex flex-col gap-2 md:flex-row"
-        >
-          {/* Left Panel - Job Feed */}
-          <div
-            className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden border-b-2 pb-2 md:border-b-0 md:border-r-2 md:pb-0 md:pr-2"
-            style={{ borderColor: "#141311" }}
-          >
-            <div className="shrink-0 space-y-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="size-5" style={{ color: "#F2C230" }} />
-                <h2 className="font-bold text-sm">فرصت‌های مناسب شما</h2>
-              </div>
+      <JobsSidebar />
 
-              <p className="text-xs" style={{ color: "#5A5450" }}>
-                مرتب‌شده بر اساس تناسب با پروفایل‌ات
-              </p>
-            </div>
-
-            {/* Search */}
-            <form
-              className="flex shrink-0 gap-1"
-              onSubmit={(event) => event.preventDefault()}
-            >
-              <Input
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                placeholder="جستجو در عنوان، شرکت یا شهر…"
-                aria-label="جستجوی آگهی‌ها"
-                className="h-8 text-xs"
-                style={{
-                  backgroundColor: "#FBF7EC",
-                  borderColor: "#141311",
-                  color: "#141311",
-                }}
-              />
-
-              <Button
-                type="submit"
-                size="icon"
-                className="size-8 shrink-0"
-                aria-label="جستجو"
-                style={{
-                  backgroundColor: "#F2C230",
-                  color: "#141311",
-                }}
-              >
-                <Search className="size-3" />
-              </Button>
-            </form>
-
-            {/* Job List */}
-            <div
-              className="min-h-48 flex-1 space-y-1 overflow-y-auto border-t-2 pt-2"
-              style={{ borderTopColor: "#141311" }}
-            >
-              {loading ? (
-                <div
-                  className="py-4 text-center text-xs"
-                  style={{ color: "#5A5450" }}
-                >
-                  در حال بارگذاری آگهی‌ها…
-                </div>
-              ) : loadError ? (
-                <div
-                  className="space-y-2 p-3 text-center text-xs"
-                  style={{ color: "#B23A2E" }}
-                >
-                  <p>بارگذاری آگهی‌ها ناموفق بود.</p>
-                  <p className="break-words">{loadError}</p>
-                  <Button
-                    size="sm"
-                    onClick={() => void loadFeed()}
-                    style={{
-                      backgroundColor: "#F2C230",
-                      color: "#141311",
-                    }}
-                  >
-                    تلاش دوباره
-                  </Button>
-                </div>
-              ) : filteredRows.length === 0 ? (
-                <div
-                  className="py-4 text-center text-xs"
-                  style={{ color: "#5A5450" }}
-                >
-                  {rows.length === 0
-                    ? "هنوز آگهی موجود نیست."
-                    : "آگهی‌ای با این عبارت پیدا نشد."}
-                </div>
-              ) : (
-                filteredRows.map((row) => (
-                  <button
-                    key={row.job.id}
-                    type="button"
-                    className={`w-full cursor-pointer border-2 p-2 text-left text-xs ${
-                      selected?.job.id === row.job.id
-                        ? "border-[#F2C230]"
-                        : "border-[#141311]"
-                    }`}
-                    onClick={() => {
-                      setSelected(row);
-                      setDecisionFor(null);
-                      setDecisionResult(null);
-                      setDecisionError(null);
-                    }}
-                    style={{
-                      backgroundColor:
-                        selected?.job.id === row.job.id
-                          ? "#FCE9A8"
-                          : "transparent",
-                      color: "#141311",
-                    }}
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold">{row.job.title}</div>
-                        <div
-                          className="mt-1 break-words"
-                          style={{ color: "#5A5450" }}
-                        >
-                          {row.job.company} • {row.job.city}
-                        </div>
-                      </div>
-
-                      <div
-                        className="flex size-8 shrink-0 items-center justify-center border-2 font-bold"
-                        style={{
-                          backgroundColor:
-                            row.score >= 70
-                              ? "#3B7A4A"
-                              : row.score >= 45
-                                ? "#C98A1F"
-                                : "#B23A2E",
-                          borderColor: "#141311",
-                          color: "#FBF7EC",
-                        }}
-                      >
-                        {row.score}
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
+      <div className="mx-auto w-full max-w-5xl">
+        {/* Header */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-extrabold">فرصت‌های شغلی</h1>
+            <p className="mt-1 text-sm" style={{ color: jobsTheme.textMuted }}>
+              {rows.length} آگهی — مرتب‌شده بر اساس تناسب با پروفایل‌ات
+            </p>
           </div>
 
-          {/* Right Panel - Job Details / Decision */}
-          {selected && (
+          <button
+            type="button"
+            onClick={() => void loadFeed()}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold shadow-sm transition-opacity disabled:opacity-60"
+            style={{
+              backgroundColor: jobsTheme.card,
+              border: `1px solid ${jobsTheme.cardBorder}`,
+              color: jobsTheme.primaryDark,
+            }}
+          >
+            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+            به‌روزرسانی
+          </button>
+        </div>
+
+        {/* Search */}
+        <form
+          className="mb-5 flex gap-2"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <div className="relative flex-1">
+            <Search
+              className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2"
+              style={{ color: jobsTheme.textFaint }}
+            />
+            <Input
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="جستجو در عنوان، شرکت یا شهر…"
+              aria-label="جستجوی آگهی‌ها"
+              className="h-11 rounded-2xl border-none pr-10 text-sm shadow-sm"
+              style={{ backgroundColor: jobsTheme.card, color: jobsTheme.text }}
+            />
+          </div>
+        </form>
+
+        {/* Job list */}
+        <div className="space-y-3 pb-24">
+          {loading ? (
             <div
-              className="flex w-full min-w-0 flex-col gap-2 overflow-hidden border-t-2 pt-2 md:w-96 md:shrink-0 md:border-l-2 md:border-t-0 md:pl-2 md:pt-0"
-              style={{ borderColor: "#141311" }}
+              className="rounded-3xl p-10 text-center text-sm"
+              style={{ backgroundColor: jobsTheme.card, color: jobsTheme.textMuted }}
             >
-              {decisionFor?.job.id === selected.job.id &&
-              decisionResult ? (
-                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-bold">{selected.job.title}</h3>
+              در حال بارگذاری آگهی‌ها…
+            </div>
+          ) : loadError ? (
+            <div
+              className="space-y-3 rounded-3xl p-8 text-center"
+              style={{ backgroundColor: jobsTheme.card }}
+            >
+              <p className="text-sm font-bold" style={{ color: jobsTheme.danger }}>
+                بارگذاری آگهی‌ها ناموفق بود.
+              </p>
+              <p className="break-words text-xs" style={{ color: jobsTheme.textMuted }}>
+                {loadError}
+              </p>
+              <button
+                type="button"
+                onClick={() => void loadFeed()}
+                className="rounded-full px-5 py-2 text-sm font-bold text-white"
+                style={{ backgroundColor: jobsTheme.primary }}
+              >
+                تلاش دوباره
+              </button>
+            </div>
+          ) : filteredRows.length === 0 ? (
+            <div
+              className="rounded-3xl p-10 text-center text-sm"
+              style={{ backgroundColor: jobsTheme.card, color: jobsTheme.textMuted }}
+            >
+              {rows.length === 0
+                ? "هنوز آگهی موجود نیست."
+                : "آگهی‌ای با این عبارت پیدا نشد."}
+            </div>
+          ) : (
+            filteredRows.map((row) => {
+              const requiredMissing = row.missing_skills ?? [];
+              const matchedSkills = (row.job.required_skills ?? []).filter(
+                (skill) => !requiredMissing.includes(skill),
+              );
 
-                    <div className="shrink-0 text-center">
-                      <div
-                        className="mx-auto flex size-12 items-center justify-center border-4 font-bold"
-                        style={{
-                          backgroundColor:
-                            decisionResult.overall_score >= 70
-                              ? "#3B7A4A"
-                              : decisionResult.overall_score >= 45
-                                ? "#C98A1F"
-                                : "#B23A2E",
-                          borderColor: "#141311",
-                          color: "#FBF7EC",
-                        }}
-                      >
-                        {decisionResult.overall_score}٪
-                      </div>
+              return (
+                <button
+                  key={row.job.id}
+                  type="button"
+                  onClick={() => router.push(`/jobs/${row.job.id}`)}
+                  className="group block w-full rounded-3xl p-4 text-right shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md md:p-5"
+                  style={{
+                    backgroundColor: jobsTheme.card,
+                    border: `1px solid ${jobsTheme.cardBorder}`,
+                  }}
+                >
+                  <div className="flex items-start gap-4">
+                    <MatchScoreBadge score={row.score} size="md" />
 
-                      <div className="mt-1 text-[10px]">
-                        {decisionLabel(decisionResult.overall_decision)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator style={{ backgroundColor: "#141311" }} />
-
-                  {/* Fit Dimensions */}
-                  <div className="space-y-1">
-                    <div className="font-bold">ابعاد تناسب:</div>
-
-                    {(
-                      [
-                        ["تکنیکی", decisionResult.technical_fit],
-                        ["سابقه", decisionResult.experience_fit],
-                        ["تحصیلات", decisionResult.education_fit],
-                      ] as [
-                        string,
-                        MatchDecisionResult["technical_fit"],
-                      ][]
-                    ).map(([label, dimension]) => (
-                      <div
-                        key={label}
-                        className="border-2 p-1"
-                        style={{
-                          backgroundColor:
-                            dimension.status === "match"
-                              ? "#FCE9A8"
-                              : "transparent",
-                          borderColor: "#141311",
-                        }}
-                      >
-                        <div className="flex items-center gap-1">
-                          <span
-                            className="flex size-4 items-center justify-center text-[9px] font-bold"
-                            style={{
-                              backgroundColor:
-                                dimension.status === "match"
-                                  ? "#3B7A4A"
-                                  : dimension.status === "conflict"
-                                    ? "#B23A2E"
-                                    : "#C98A1F",
-                              color: "#FBF7EC",
-                            }}
-                          >
-                            {statusIcon(dimension.status)}
-                          </span>
-
-                          <span className="font-bold">{label}</span>
-
-                          <span className="mr-auto text-[10px]">
-                            {dimension.score}/{dimension.max_score}
-                          </span>
-                        </div>
-
-                        <div className="mt-1 text-[10px]">
-                          {dimension.explanation}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <h2 className="text-base font-extrabold">{row.job.title}</h2>
+                          <p className="text-xs" style={{ color: jobsTheme.textMuted }}>
+                            {row.job.company}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Matching Skills */}
-                  {decisionResult.matching_skills.length > 0 && (
-                    <div>
-                      <div className="text-[10px] font-bold">
-                        مهارت‌های تأییدشده:
-                      </div>
+                      <JobMetaChips job={row.job} size="sm" />
 
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {decisionResult.matching_skills.map((skill) => (
-                          <Badge
-                            key={skill}
-                            className="text-[9px]"
-                            style={{
-                              backgroundColor: "#3B7A4A",
-                              color: "#FBF7EC",
-                            }}
-                          >
-                            ✓ {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Missing Required Skills */}
-                  {decisionResult.missing_required_skills.length > 0 && (
-                    <div>
-                      <div className="text-[10px] font-bold">
-                        مهارت‌های الزامی بدون شواهد:
-                      </div>
-
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {decisionResult.missing_required_skills.map(
-                          (skill) => (
-                            <Badge
-                              key={skill}
-                              className="text-[9px]"
-                              style={{
-                                backgroundColor: "#B23A2E",
-                                color: "#FBF7EC",
-                              }}
-                            >
-                              ✕ {skill}
-                            </Badge>
-                          ),
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-bold">{selected.job.title}</h3>
-
-                    <div
-                      className="flex size-8 shrink-0 items-center justify-center border-2 font-bold"
-                      style={{ borderColor: "#141311" }}
-                    >
-                      {selected.score}
-                    </div>
-                  </div>
-
-                  <div style={{ color: "#5A5450" }}>
-                    {selected.job.company} • {selected.job.city}
-                  </div>
-
-                  {selected.breakdown && (
-                    <div
-                      className="space-y-1 border-t-2 pt-2"
-                      style={{ borderTopColor: "#141311" }}
-                    >
-                      <div className="font-bold">تفکیک امتیاز:</div>
-
-                      {(
-                        [
-                          ["مهارت‌ها", selected.breakdown.skills, 45],
-                          ["نقش", selected.breakdown.role, 25],
-                          ["سطح", selected.breakdown.level, 20],
-                          ["شرایط", selected.breakdown.logistics, 10],
-                        ] as [string, number, number][]
-                      ).map(([label, value, max]) => (
-                        <div
-                          key={label}
-                          className="flex items-center gap-1"
-                        >
-                          <span className="w-16 text-[10px]">{label}</span>
-
-                          <Progress
-                            value={(value / max) * 100}
-                            className="h-1 flex-1"
-                          />
-
-                          <span className="w-10 text-right text-[10px]">
-                            {value}/{max}
-                          </span>
+                      {(matchedSkills.length > 0 || requiredMissing.length > 0) && (
+                        <div className="flex flex-wrap gap-1.5">
+                          <SkillChips skills={matchedSkills} tone="success" />
+                          <SkillChips skills={requiredMissing} tone="danger" />
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      )}
 
-                  {selected.reasons && selected.reasons.length > 0 && (
-                    <div
-                      className="space-y-1 border-t-2 pt-2"
-                      style={{ borderTopColor: "#141311" }}
+                      {row.breakdown && (
+                        <div className="pt-1">
+                          <BreakdownBars breakdown={row.breakdown} />
+                        </div>
+                      )}
+
+                      {requiredMissing.length > 0 && (
+                        <p className="text-[11px]" style={{ color: jobsTheme.danger }}>
+                          این مهارت‌ها الزامی است و در پروفایل شما نیست:{" "}
+                          {requiredMissing.join("، ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className="mt-4 flex items-center justify-end gap-2 border-t pt-3"
+                    style={{ borderColor: jobsTheme.cardBorder }}
+                  >
+                    <span
+                      className="ml-auto text-xs font-bold opacity-0 transition-opacity group-hover:opacity-100"
+                      style={{ color: jobsTheme.primaryDark }}
                     >
-                      <div className="font-bold">دلایل:</div>
+                      مشاهده‌ی تحلیل کامل ←
+                    </span>
 
-                      <ul className="space-y-0.5">
-                        {selected.reasons.map((reason, index) => {
-                          const negative =
-                            reason.includes("نیست") ||
-                            reason.includes("خوان نیست");
-
-                          return (
-                            <li
-                              key={index}
-                              className="flex gap-1 text-[10px]"
-                            >
-                              <span
-                                className="font-bold"
-                                style={{
-                                  color: negative ? "#B23A2E" : "#3B7A4A",
-                                }}
-                              >
-                                {negative ? "✕" : "✓"}
-                              </span>
-
-                              <span>{reason}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {selected.job.description && (
-                    <div
-                      className="border-2 p-2 text-[10px]"
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="رد کن"
+                      onClick={(event) => void handleFeedback(event, row, false)}
+                      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold transition-opacity disabled:opacity-50"
                       style={{
-                        backgroundColor: "#FCE9A8",
-                        borderColor: "#141311",
+                        backgroundColor: jobsTheme.dangerSoft,
+                        color: jobsTheme.danger,
+                        opacity: feedbackBusyId === row.job.id ? 0.5 : 1,
                       }}
                     >
-                      {selected.job.description.substring(0, 200)}
-                      {selected.job.description.length > 200 ? "…" : ""}
-                    </div>
-                  )}
+                      <ThumbsDown className="size-3.5" />
+                      رد کن
+                    </span>
 
-                  {selected.missing_skills &&
-                    selected.missing_skills.length > 0 && (
-                      <div
-                        className="space-y-1 border-t-2 pt-2"
-                        style={{ borderTopColor: "#141311" }}
-                      >
-                        <div className="text-[10px] font-bold">
-                          مهارت‌های گمشده:
-                        </div>
-
-                        <div className="flex flex-wrap gap-1">
-                          {selected.missing_skills.map((skill) => (
-                            <Badge
-                              key={skill}
-                              variant="outline"
-                              className="text-[9px]"
-                            >
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                </div>
-              )}
-
-              {decisionLoading && (
-                <p className="text-xs" style={{ color: "#5A5450" }}>
-                  در حال تحلیل تناسب آگهی…
-                </p>
-              )}
-
-              {decisionError && (
-                <p
-                  className="break-words text-xs"
-                  style={{ color: "#B23A2E" }}
-                >
-                  تحلیل ناموفق بود: {decisionError}
-                </p>
-              )}
-
-              {/* Action Buttons */}
-              <div
-                className="flex shrink-0 flex-wrap gap-1 border-t-2 pt-2"
-                style={{ borderTopColor: "#141311" }}
-              >
-                <Button
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => void analyzeDecision(selected)}
-                  disabled={decisionLoading}
-                  style={{
-                    backgroundColor: "#F2C230",
-                    color: "#141311",
-                  }}
-                >
-                  <Sparkles className="size-3" />
-                  تحلیل Match
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  style={{
-                    borderColor: "#141311",
-                    color: "#141311",
-                  }}
-                  onClick={() => setSelected(null)}
-                >
-                  بستن
-                </Button>
-              </div>
-            </div>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="ذخیره کن"
+                      onClick={(event) => void handleFeedback(event, row, true)}
+                      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold transition-opacity disabled:opacity-50"
+                      style={{
+                        backgroundColor: jobsTheme.successSoft,
+                        color: jobsTheme.success,
+                        opacity: feedbackBusyId === row.job.id ? 0.5 : 1,
+                      }}
+                    >
+                      <ThumbsUp className="size-3.5" />
+                      ذخیره کن
+                    </span>
+                  </div>
+                </button>
+              );
+            })
           )}
-        </RetroWindow>
+        </div>
       </div>
 
       {/* AI Chat */}
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-6 left-6 z-50">
         {!chatOpen ? (
-          <Button
+          <button
+            type="button"
             onClick={() => setChatOpen(true)}
-            className="border-2 shadow-md"
+            className="flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105"
             style={{
-              backgroundColor: "#F2C230",
-              borderColor: "#141311",
-              color: "#141311",
+              background: `linear-gradient(135deg, ${jobsTheme.primary}, ${jobsTheme.primaryDark})`,
             }}
           >
-            <Sparkles className="ml-1 size-4" />
+            <MessageCircle className="size-4" />
             دستیار هوشمند
-          </Button>
+          </button>
         ) : (
           <section
-            className="flex h-[min(520px,75vh)] w-[min(360px,calc(100vw-2rem))] flex-col border-2 shadow-xl"
-            style={{
-              backgroundColor: "#FBF7EC",
-              borderColor: "#141311",
-              color: "#141311",
-            }}
+            className="flex h-[min(520px,75vh)] w-[min(360px,calc(100vw-3rem))] flex-col overflow-hidden rounded-3xl shadow-2xl"
+            style={{ backgroundColor: jobsTheme.card }}
             aria-label="گفت‌وگو با دستیار هوشمند"
           >
             <header
-              className="flex items-center justify-between gap-2 border-b-2 p-2"
+              className="flex items-center justify-between gap-2 px-4 py-3 text-white"
               style={{
-                backgroundColor: "#F2C230",
-                borderColor: "#141311",
+                background: `linear-gradient(135deg, ${jobsTheme.primary}, ${jobsTheme.primaryDark})`,
               }}
             >
-              <div className="text-xs font-bold">دستیار هوشمند HAMRAH</div>
+              <div className="flex items-center gap-2 text-sm font-bold">
+                <Sparkles className="size-4" />
+                دستیار هوشمند کاروویا
+              </div>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
+              <button
+                type="button"
                 aria-label="بستن دستیار"
                 onClick={() => setChatOpen(false)}
-                style={{ color: "#141311" }}
+                className="flex size-7 items-center justify-center rounded-full bg-white/15 hover:bg-white/25"
               >
-                ×
-              </Button>
+                <X className="size-4" />
+              </button>
             </header>
 
-            <div className="flex-1 space-y-2 overflow-y-auto p-2">
+            <div className="flex-1 space-y-2 overflow-y-auto p-3">
               {messages.map((message, index) => (
                 <div
                   key={`${index}-${message.role}`}
-                  className={`max-w-[90%] whitespace-pre-wrap break-words border-2 p-2 text-xs ${
+                  className={`max-w-[90%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-xs ${
                     message.role === "user" ? "mr-auto" : "ml-auto"
                   }`}
                   style={{
                     backgroundColor:
-                      message.role === "user" ? "#FCE9A8" : "#FFFFFF",
-                    borderColor: "#141311",
+                      message.role === "user"
+                        ? jobsTheme.primarySoft
+                        : jobsTheme.primarySofter,
+                    color: jobsTheme.text,
                   }}
                 >
                   {message.content}
@@ -745,7 +422,7 @@ export default function JobsPage() {
               ))}
 
               {chatBusy && (
-                <p className="text-xs" style={{ color: "#5A5450" }}>
+                <p className="text-xs" style={{ color: jobsTheme.textMuted }}>
                   دستیار در حال پاسخ‌گویی است…
                 </p>
               )}
@@ -754,8 +431,8 @@ export default function JobsPage() {
             </div>
 
             <form
-              className="flex gap-1 border-t-2 p-2"
-              style={{ borderColor: "#141311" }}
+              className="flex gap-2 border-t p-3"
+              style={{ borderColor: jobsTheme.cardBorder }}
               onSubmit={(event) => {
                 event.preventDefault();
                 void sendChat();
@@ -767,27 +444,19 @@ export default function JobsPage() {
                 placeholder="پیامت را بنویس…"
                 aria-label="پیام به دستیار"
                 disabled={chatBusy}
-                className="h-8 min-w-0 text-xs"
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  borderColor: "#141311",
-                  color: "#141311",
-                }}
+                className="h-9 min-w-0 rounded-full text-xs"
+                style={{ backgroundColor: jobsTheme.primarySofter }}
               />
 
-              <Button
+              <button
                 type="submit"
-                size="icon"
-                className="size-8 shrink-0"
                 aria-label="ارسال پیام"
                 disabled={chatBusy || !chatInput.trim()}
-                style={{
-                  backgroundColor: "#F2C230",
-                  color: "#141311",
-                }}
+                className="flex size-9 shrink-0 items-center justify-center rounded-full text-white disabled:opacity-50"
+                style={{ backgroundColor: jobsTheme.primary }}
               >
-                ➤
-              </Button>
+                <Send className="size-4" />
+              </button>
             </form>
           </section>
         )}

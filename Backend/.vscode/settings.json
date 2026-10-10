@@ -1,0 +1,13 @@
+{
+  // Pin VS Code to this project's own Python 3.13 virtualenv instead of
+  // letting it auto-pick an unrelated interpreter (e.g. a global Python 3.9
+  // or a venv from a different project).
+  //
+  // Create it first with:
+  //   python3.13 -m venv .venv
+  //   source .venv/bin/activate   (Windows: .venv\Scripts\activate)
+  //   pip install -r requirements.txt
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.typeCheckingMode": "basic"
+}
